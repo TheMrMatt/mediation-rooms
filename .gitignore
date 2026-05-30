@@ -16,6 +16,9 @@ broadcast/
 .env.local
 .env.*.local
 
+# Vercel
+.vercel
+
 # IDE
 .idea/
 .vscode/

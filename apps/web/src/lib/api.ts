@@ -6,8 +6,17 @@ import type {
   PartyRole,
 } from "@mediation-rooms/config";
 
-export const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+function resolveApiUrl(): string {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "");
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}/api`;
+  }
+  return "http://localhost:3001";
+}
+
+export const API_URL = resolveApiUrl();
 
 async function parseError(res: Response): Promise<string> {
   try {

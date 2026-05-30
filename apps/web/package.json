@@ -13,6 +13,8 @@
   },
   "dependencies": {
     "@arkiv-network/sdk": "^0.6.5",
+    "@mediation-rooms/agent": "workspace:*",
+    "@mediation-rooms/api": "workspace:*",
     "@mediation-rooms/config": "workspace:*",
     "@mediation-rooms/ui": "workspace:*",
     "@radix-ui/react-accordion": "^1.2.12",
@@ -26,6 +28,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "geist": "^1.7.1",
+    "hono": "^4.7.11",
     "lucide-react": "^1.17.0",
     "next": "^15.3.3",
     "react": "^19.1.0",

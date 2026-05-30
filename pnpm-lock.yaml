@@ -51,6 +51,12 @@ importers:
       '@arkiv-network/sdk':
         specifier: ^0.6.5
         version: 0.6.8(typedoc@0.28.19(typescript@5.9.3))(typescript@5.9.3)
+      '@mediation-rooms/agent':
+        specifier: workspace:*
+        version: link:../../packages/agent
+      '@mediation-rooms/api':
+        specifier: workspace:*
+        version: link:../api
       '@mediation-rooms/config':
         specifier: workspace:*
         version: link:../../packages/config
@@ -90,6 +96,9 @@ importers:
       geist:
         specifier: ^1.7.1
         version: 1.7.1(next@15.5.18(react-dom@19.2.6(react@19.2.6))(react@19.2.6))
+      hono:
+        specifier: ^4.7.11
+        version: 4.12.23
       lucide-react:
         specifier: ^1.17.0
         version: 1.17.0(react@19.2.6)
