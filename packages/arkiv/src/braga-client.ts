@@ -20,6 +20,70 @@ import type {
 } from "./types.js";
 
 const DEFAULT_TTL_SECONDS = 60 * 60 * 24 * 7;
+const QUERY_MAX_ATTEMPTS = 5;
+const QUERY_BASE_DELAY_MS = 500;
+
+/**
+ * El nodo RPC de Braga (testnet) puede cancelar queries bajo carga y devolver
+ * errores transitorios como "context cancelled" o timeouts. El SDK de Arkiv no
+ * reintenta por sí solo, así que detectamos estos casos para reintentar.
+ */
+function isTransientQueryError(error: unknown): boolean {
+  const message = (
+    error instanceof Error ? error.message : String(error)
+  ).toLowerCase();
+
+  return [
+    "context cancelled",
+    "context canceled",
+    "context deadline exceeded",
+    "timeout",
+    "timed out",
+    "fetch failed",
+    "network",
+    "socket hang up",
+    "econnreset",
+    "econnrefused",
+    "etimedout",
+    "503",
+    "502",
+    "504",
+    "429",
+  ].some((needle) => message.includes(needle));
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function withQueryRetry<T>(
+  operation: () => Promise<T>,
+  label: string,
+): Promise<T> {
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= QUERY_MAX_ATTEMPTS; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      if (attempt === QUERY_MAX_ATTEMPTS || !isTransientQueryError(error)) {
+        throw error;
+      }
+
+      const backoff = QUERY_BASE_DELAY_MS * 2 ** (attempt - 1);
+      const jitter = Math.floor(Math.random() * QUERY_BASE_DELAY_MS);
+      console.warn(
+        `[arkiv] ${label} falló (intento ${attempt}/${QUERY_MAX_ATTEMPTS}), ` +
+          `reintentando en ${backoff + jitter}ms:`,
+        error instanceof Error ? error.message : error,
+      );
+      await delay(backoff + jitter);
+    }
+  }
+
+  throw lastError;
+}
 
 function resolveExpiresIn(
   expiresAt?: string,
@@ -57,7 +121,16 @@ export class BragaArkivClient implements ArkivStorage {
 
     this.project = config.projectAttribute ?? PROJECT_ATTRIBUTE;
     const account = privateKeyToAccount(config.privateKey as `0x${string}`);
-    const transport = config.rpcUrl ? http(config.rpcUrl) : http();
+    // timeout generoso para que viem no aborte queries lentas del nodo de Braga
+    // (un abort del cliente también dispara "context cancelled" en el nodo).
+    const transportOptions = {
+      timeout: 30_000,
+      retryCount: 3,
+      retryDelay: 500,
+    } as const;
+    const transport = config.rpcUrl
+      ? http(config.rpcUrl, transportOptions)
+      : http(undefined, transportOptions);
 
     this.walletClient = createWalletClient({
       chain: braga,
@@ -202,52 +275,79 @@ export class BragaArkivClient implements ArkivStorage {
     );
   }
 
+  private mapEntity(
+    entity: {
+      key: string;
+      attributes: Array<{ key: string; value: unknown }>;
+      createdAtBlock?: bigint | number | null;
+      expiresAtBlock?: bigint | number | null;
+      toJson: () => unknown;
+      toText: () => string;
+    },
+    fallbackType: string,
+  ): ArkivEntity {
+    const attributes = Object.fromEntries(
+      entity.attributes.map(({ key, value }) => [key, String(value)]),
+    );
+
+    let payload: Record<string, unknown> = {};
+    try {
+      payload = entity.toJson() as Record<string, unknown>;
+    } catch {
+      payload = { raw: entity.toText() };
+    }
+
+    const meta = payload._mediationMeta as { txHash?: string } | undefined;
+
+    return {
+      id: entity.key,
+      txHash: meta?.txHash,
+      type: attributes.entityType ?? fallbackType,
+      attributes,
+      payload,
+      createdAt: entity.createdAtBlock
+        ? new Date(Number(entity.createdAtBlock) * 1000).toISOString()
+        : new Date().toISOString(),
+      expiresAt: entity.expiresAtBlock
+        ? new Date(Number(entity.expiresAtBlock) * 1000).toISOString()
+        : undefined,
+    };
+  }
+
+  /**
+   * Ejecuta una query filtrando por proyecto. `entityType` es opcional: si se
+   * omite, devuelve todos los tipos que matcheen (útil para traer todo el caso
+   * en una sola llamada en lugar de N queries en paralelo).
+   */
   private async queryByProject(
-    entityType: string,
+    entityType?: string,
     extra?: Record<string, string>,
   ): Promise<ArkivEntity[]> {
     const predicates = [
       eq("project", this.project),
-      eq("entityType", entityType),
+      ...(entityType ? [eq("entityType", entityType)] : []),
       ...Object.entries(extra ?? {}).map(([key, value]) => eq(key, value)),
     ];
 
-    const result = await this.publicClient
-      .buildQuery()
-      .where(predicates)
-      .withPayload(true)
-      .withAttributes(true)
-      .limit(200)
-      .fetch();
+    const label = `query project=${this.project}${
+      entityType ? ` entityType=${entityType}` : ""
+    }${extra?.caseId ? ` caseId=${extra.caseId}` : ""}`;
 
-    return result.entities.map((entity) => {
-      const attributes = Object.fromEntries(
-        entity.attributes.map(({ key, value }) => [key, String(value)]),
-      );
+    const result = await withQueryRetry(
+      () =>
+        this.publicClient
+          .buildQuery()
+          .where(predicates)
+          .withPayload(true)
+          .withAttributes(true)
+          .limit(200)
+          .fetch(),
+      label,
+    );
 
-      let payload: Record<string, unknown> = {};
-      try {
-        payload = entity.toJson() as Record<string, unknown>;
-      } catch {
-        payload = { raw: entity.toText() };
-      }
-
-      const meta = payload._mediationMeta as { txHash?: string } | undefined;
-
-      return {
-        id: entity.key,
-        txHash: meta?.txHash,
-        type: attributes.entityType ?? entityType,
-        attributes,
-        payload,
-        createdAt: entity.createdAtBlock
-          ? new Date(Number(entity.createdAtBlock) * 1000).toISOString()
-          : new Date().toISOString(),
-        expiresAt: entity.expiresAtBlock
-          ? new Date(Number(entity.expiresAtBlock) * 1000).toISOString()
-          : undefined,
-      };
-    });
+    return result.entities.map((entity) =>
+      this.mapEntity(entity, entityType ?? "case"),
+    );
   }
 
   async queryCaseEntities(caseId: string): Promise<ArkivEntity[]> {
@@ -259,23 +359,12 @@ export class BragaArkivClient implements ArkivStorage {
   }
 
   async queryAllEntitiesByCaseId(caseId: string): Promise<ArkivEntity[]> {
-    const entityTypes = [
-      "case",
-      "evidence",
-      "claim",
-      "response",
-      "agent_analysis",
-    ] as const;
+    // Una sola query por caseId (sin filtrar por entityType) en lugar de 5 en
+    // paralelo: reduce drásticamente la carga sobre el nodo RPC de Braga y evita
+    // los errores "context cancelled" al resolver un caso.
+    const entities = await this.queryByProject(undefined, { caseId });
 
-    const batches = await Promise.all(
-      entityTypes.map((entityType) =>
-        this.queryByProject(entityType, { caseId }),
-      ),
-    );
-
-    return batches
-      .flat()
-      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    return entities.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   }
 
   async listCaseEntities(): Promise<ArkivEntity[]> {
