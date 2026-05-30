@@ -2,6 +2,24 @@
 
 Infraestructura plug-and-play para agregar mediación a contratos o sistemas digitales.
 
+## [ ARKIV ] × PunaTech 2026
+
+Proyecto para el hackathon **[ ARKIV ] × PunaTech 2026** — track de aplicaciones de IA sobre [ ARKIV ]. Los casos, la evidencia y las resoluciones del agente mediador se persisten como entidades en Arkiv Braga testnet (namespace `mediation-rooms`).
+
+### Prueba on-chain (Arkiv Braga)
+
+Transacción de ejemplo que crea una entidad en Arkiv:
+
+https://explorer.braga.hoodi.arkiv.network/tx/0xa9b23829c08938d332ded0ac953a37532115631a0b9105123cc04b36f00d4090
+
+### Equipo
+
+| Nombre | GitHub | Wallet (premio) |
+|--------|--------|-----------------|
+| Matías Rojas | [@TheMrMatt](https://github.com/TheMrMatt) | `0xaa7727dec5cbb9d91d3d4daedb07a78a976cd7be` |
+
+Guía de entrega del hackathon: [builders-guide.md](https://github.com/Arkiv-Network/arkiv-puna-tech-hackathon/blob/main/docs/builders-guide.md)
+
 ## Arrancar (Arkiv testnet)
 
 ```bash
