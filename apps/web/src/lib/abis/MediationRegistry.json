@@ -1,0 +1,57 @@
+[
+  {
+    "type": "function",
+    "name": "resolveCase",
+    "stateMutability": "nonpayable",
+    "inputs": [
+      { "name": "caseId", "type": "bytes32" },
+      { "name": "resolution", "type": "uint8" }
+    ],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "canExecute",
+    "stateMutability": "view",
+    "inputs": [{ "name": "caseId", "type": "bytes32" }],
+    "outputs": [{ "name": "", "type": "bool" }]
+  },
+  {
+    "type": "function",
+    "name": "getResolution",
+    "stateMutability": "view",
+    "inputs": [{ "name": "caseId", "type": "bytes32" }],
+    "outputs": [{ "name": "", "type": "uint8" }]
+  },
+  {
+    "type": "function",
+    "name": "getCase",
+    "stateMutability": "view",
+    "inputs": [{ "name": "caseId", "type": "bytes32" }],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "components": [
+          { "name": "caseId", "type": "bytes32" },
+          { "name": "claimant", "type": "address" },
+          { "name": "respondent", "type": "address" },
+          { "name": "status", "type": "uint8" },
+          { "name": "resolution", "type": "uint8" },
+          {
+            "name": "externalAction",
+            "type": "tuple",
+            "components": [
+              { "name": "contractAddress", "type": "address" },
+              { "name": "actionId", "type": "bytes32" }
+            ]
+          },
+          { "name": "createdAt", "type": "uint256" },
+          { "name": "disputedAt", "type": "uint256" },
+          { "name": "resolvedAt", "type": "uint256" },
+          { "name": "expiresAt", "type": "uint256" }
+        ]
+      }
+    ]
+  }
+]

@@ -1,0 +1,63 @@
+[
+  {
+    "type": "function",
+    "name": "deposit",
+    "stateMutability": "payable",
+    "inputs": [
+      { "name": "escrowId", "type": "bytes32" },
+      { "name": "provider", "type": "address" }
+    ],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "markDelivery",
+    "stateMutability": "nonpayable",
+    "inputs": [
+      { "name": "escrowId", "type": "bytes32" },
+      { "name": "caseId", "type": "bytes32" }
+    ],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "openDispute",
+    "stateMutability": "nonpayable",
+    "inputs": [{ "name": "escrowId", "type": "bytes32" }],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "release",
+    "stateMutability": "nonpayable",
+    "inputs": [{ "name": "escrowId", "type": "bytes32" }],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "refund",
+    "stateMutability": "nonpayable",
+    "inputs": [{ "name": "escrowId", "type": "bytes32" }],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "getEscrow",
+    "stateMutability": "view",
+    "inputs": [{ "name": "escrowId", "type": "bytes32" }],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "components": [
+          { "name": "caseId", "type": "bytes32" },
+          { "name": "client", "type": "address" },
+          { "name": "provider", "type": "address" },
+          { "name": "amount", "type": "uint256" },
+          { "name": "status", "type": "uint8" },
+          { "name": "depositedAt", "type": "uint256" }
+        ]
+      }
+    ]
+  }
+]

@@ -1,0 +1,15 @@
+{
+  "name": "@mediation-rooms/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Solidity contracts for Mediation Rooms — registry, guard and demo escrow",
+  "scripts": {
+    "build": "command -v forge >/dev/null && forge build || echo 'Skipping: install Foundry to compile contracts'",
+    "build:with-abis": "pnpm build && pnpm export:abis",
+    "test": "command -v forge >/dev/null && forge test || echo 'Skipping: install Foundry to run contract tests'",
+    "deploy:local": "command -v forge >/dev/null && forge script script/Deploy.s.sol:DeployScript --rpc-url ${RPC_URL:-http://127.0.0.1:8545} --broadcast --private-key ${PRIVATE_KEY:-0xac0974bec39a17bbad8b97c047d83019108eb9c93935c68d68f22bbee68b9fe} && pnpm export:abis || echo 'Skipping: install Foundry to deploy contracts'",
+    "deploy:braga": "command -v forge >/dev/null && forge script script/Deploy.s.sol:DeployScript --rpc-url ${RPC_URL:-https://braga.hoodi.arkiv.network/rpc} --broadcast --private-key ${PRIVATE_KEY:?set PRIVATE_KEY} --slow && pnpm export:abis || echo 'Skipping: install Foundry to deploy contracts'",
+    "export:abis": "node scripts/export-abis.mjs",
+    "clean": "forge clean"
+  }
+}

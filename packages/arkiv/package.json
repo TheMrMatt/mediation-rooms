@@ -1,0 +1,30 @@
+{
+  "name": "@mediation-rooms/arkiv",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Arkiv wrapper for case entities, evidence and agent analysis",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "typecheck": "tsc --noEmit",
+    "check": "tsx scripts/check-connection.ts",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@arkiv-network/sdk": "^0.6.5",
+    "@mediation-rooms/config": "workspace:*",
+    "dotenv": "^16.5.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  }
+}
